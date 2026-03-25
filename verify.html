@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Проверка члена братства</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="card" id="content">
+        <div class="loader">Загрузка...</div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
+
+        if (!id) {
+            document.getElementById('content').innerHTML = '<div class="error">Не указан идентификатор. Используйте ?id=BOD-XXX</div>';
+        } else {
+            fetch('members.json')
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    return response.json();
+                })
+                .then(data => {
+                    const members = data.members || data;
+                    const member = members.find(m => m.id === id);
+                    if (!member) {
+                        document.getElementById('content').innerHTML = '<div class="error">Документ не действителен: участник с таким ID не найден</div>';
+                        return;
+                    }
+
+                    // Проверка статуса
+                    const isExcluded = member.status === 'excluded';
+                    
+                    if (isExcluded) {
+                        // Формируем сообщение об исключении
+                        let excludedHtml = `<div class="excluded-message">
+                            <strong>⚠️ Членство аннулировано</strong><br>
+                            Этот участник исключён из братства.
+                        `;
+                        if (member.excludedDate) {
+                            excludedHtml += `<br>📅 Дата исключения: ${escapeHtml(member.excludedDate)}`;
+                        }
+                        if (member.excludedReason) {
+                            excludedHtml += `<br>📜 Причина: ${escapeHtml(member.excludedReason)}`;
+                        }
+                        excludedHtml += `</div>`;
+                        
+                        document.getElementById('content').innerHTML = `
+                            <div class="excluded-message">
+                                ${excludedHtml}
+                            </div>
+                            <div class="id">ID: ${escapeHtml(member.id)}</div>
+                            <div class="footer">Грамота утратила силу</div>
+                        `;
+                        // Добавляем класс для стилизации
+                        document.querySelector('.card').classList.add('excluded');
+                        return;
+                    }
+                    
+                    // Если активен — показываем полные данные
+                    let updatedHtml = '';
+                    if (member.updated) {
+                        updatedHtml = `<div class="info-row">📅 Последнее изменение ранга: ${escapeHtml(member.updated)}</div>`;
+                    }
+                    
+                    const avatarHtml = member.avatar 
+                        ? `<img class="avatar" src="${member.avatar}" alt="Аватар">`
+                        : `<div class="avatar">🦋</div>`;
+                    
+                    document.getElementById('content').innerHTML = `
+                        ${avatarHtml}
+                        <h1>${escapeHtml(member.nickname)}</h1>
+                        <div class="rank">${escapeHtml(member.rank)}</div>
+                        <div class="info-row">📅 Вступление: ${escapeHtml(member.joined)}</div>
+                        ${updatedHtml}
+                        <div class="id">ID: ${escapeHtml(member.id)}</div>
+                        <div class="footer">Подлинность подтверждена реестром братства</div>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Ошибка загрузки:', error);
+                    document.getElementById('content').innerHTML = `<div class="error">Ошибка проверки: ${error.message}</div>`;
+                });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+    </script>
+</body>
+</html>

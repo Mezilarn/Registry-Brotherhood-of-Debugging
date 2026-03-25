@@ -1,0 +1,16 @@
+{
+  "members": [
+    {
+      "id": "BOD-001",
+      "nickname": "Mezilarn",
+      "rank": "Гильдмастер",
+      "joined": "2026-03-22"
+    },
+    {
+      "id": "BOD-002",
+      "nickname": "Oda",
+      "rank": "Подмастерье",
+      "joined": "2026-03-25"
+    }
+  ]
+}
